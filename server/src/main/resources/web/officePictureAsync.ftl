@@ -127,7 +127,7 @@
     // 初始加载页面数量
     const INIT_NUM = <#if initNum??>${initNum}<#else>2</#if>;
     // 加载完整文件失败时，最大可重试次数[
-    const RELOAD_ALL_DATA_COUNT_MAX = 3;
+    const RELOAD_ALL_DATA_COUNT_MAX = 30;
     // 加载完整文件失败时，已重试次数
     let reloadAllDataCount = 0;
     // 完整文件是否加载完成
@@ -162,7 +162,7 @@
         return imgUrlPathItemArr[imgUrlPathItemArr.length - 2];
     }
 
-    function render_all_data(imgUrls) {
+    function renderAllData(imgUrls) {
         if (Array.isArray(imgUrls) && imgUrls.length) {
             $.each(imgUrls, (idx, url) => {
                 let img_element = $('<img/>', {
@@ -202,30 +202,27 @@
                         if (!Array.isArray(imgUrls)) {
                             alert('获取的文件数据有误，已获取的数据不是有效的数组！');
                         } else if (0 >= imgUrls.length) {
-                            alert('文件数据未更新，5秒后将重新加载！');
-                            setTimeout(loadAllData, 5000)
+                            retry(loadAllData, '文件数据未更新');
                         } else {
-                            render_all_data(imgUrls);
+                            renderAllData(imgUrls);
                             pageNum = res.data.pageNum;
                             updateLoadedNum();
                         }
+                    } else {
+                        let errorMsg;
+                        if (undefined !== res.msg && 0 < $.trim(res.msg).length) {
+                            errorMsg = $.trim(res.msg);
+                        } else {
+                            errorMsg = "文件读取失败"
+                        }
+                        retry(loadAllData, errorMsg);
                     }
                 })
                 .fail(() => {
-                    reloadAllDataCount++;
-                    if (reloadAllDataCount <= RELOAD_ALL_DATA_COUNT_MAX) {
-                        alert('完整文件加载失败，5秒后将重新加载！');
-                        setTimeout(loadAllData, 5000)
-                    } else {
-                        alert('完整文件预览无法完成，请重试！');
-                    }
+                    retry(loadAllData, '完整文件加载失败');
                 })
                 .always(() => {
-                    if (loadedNum < pageNum) {
-                        loadingDataFlag = false;
-                    }
-                    showImg();
-                    loadingTipHide();
+                    resetLoadingStatus();
                 });
         }
     }
@@ -319,8 +316,25 @@
         }
     }
 
+    function resetLoadingStatus() {
+        if (loadedNum < pageNum || 0 >= pageNum) {
+            loadingDataFlag = false;
+        }
+        showImg();
+        setTimeout(loadingTipHide, 600);
+    }
+
+    function retry(fn, msg) {
+        reloadAllDataCount++;
+        if (reloadAllDataCount <= RELOAD_ALL_DATA_COUNT_MAX) {
+            alert(msg + '，5秒后将重新加载！');
+            setTimeout(fn, 5000);
+        } else {
+            alert('数据重新加载次数过多，请尝试刷新页面！');
+        }
+    }
+
     window.onscroll = renderImgs;
-    // window.onscrollend = renderImgs;
 </script>
 </body>
 </html>

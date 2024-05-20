@@ -160,7 +160,21 @@ public class PdfHandlerService {
         List<String> imageUrls = new ArrayList<>();
         try {
             // 加载文件
-            File pdfFile = new File(fileNameFilePath);
+            /**
+             * 读取临时文件或完整文件
+             * - 若文件是 PDF，则加载完整文件
+             * - 若文件是 Office
+             *  - 异步转换为 PDF 未完成，则加载临时文件
+             *  - 异步转换为 PDF 已完成，则加载完整文件
+             */
+            String readPdfFile;
+            if (!fileAttribute.isAsync() || FileType.PDF.equals(fileAttribute.getType()) || fileAttribute.getOfficeConvertfuture().isDone()) {
+                readPdfFile = pdfFilePath;
+            } else {
+                readPdfFile = fileAttribute.getTmpOutFilePath();
+                readTmpFileFlag = true;
+            }
+            File pdfFile = new File(readPdfFile);
             if (!pdfFile.exists()) {
                 return null;
             }
@@ -176,19 +190,8 @@ public class PdfHandlerService {
             // 校验 PDF 文件密码
             boolean passwordRequiredFlag = checkPasswordRequired(fileNameFilePath, pdfFilePath, filePassword);
 
-            /**
-             * 读取临时文件或完整文件
-             * - 若文件是 PDF，则加载完整文件
-             * - 若文件是 Office
-             *  - 异步转换为 PDF 未完成，则加载临时文件
-             *  - 异步转换为 PDF 已完成，则加载完整文件
-             */
-            if (!fileAttribute.isAsync() || FileType.PDF.equals(fileAttribute.getType()) || fileAttribute.getOfficeConvertfuture().isDone()) {
-                doc = PDDocument.load(pdfFile, filePassword);
-            } else {
-                doc = PDDocument.load(new File(fileAttribute.getTmpOutFilePath()), filePassword);
-                readTmpFileFlag = true;
-            }
+            // 读取文件
+            doc = PDDocument.load(pdfFile, filePassword);
 
             // 内容读取
             doc.setResourceCache(new NotResourceCache());
@@ -246,7 +249,7 @@ public class PdfHandlerService {
                     }
                     future = fileAttribute.getOfficeConvertfuture().thenRun(() -> {
                         try {
-                            final PDDocument asyncDoc = PDDocument.load(pdfFile, filePassword);
+                            final PDDocument asyncDoc = PDDocument.load(new File(pdfFilePath), filePassword);
                             asyncDoc.setResourceCache(new NotResourceCache());
                             final int asyncPageCount = asyncDoc.getNumberOfPages();
                             final PDFRenderer asyncPdfRenderer = new PDFRenderer(asyncDoc);

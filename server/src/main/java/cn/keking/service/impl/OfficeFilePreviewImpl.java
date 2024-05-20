@@ -6,6 +6,8 @@ import cn.keking.model.ReturnResponse;
 import cn.keking.service.FileHandlerService;
 import cn.keking.service.FilePreview;
 import cn.keking.service.OfficeToPdfService;
+import cn.keking.service.PdfHandlerService;
+import cn.keking.service.cache.CacheService;
 import cn.keking.utils.DownloadUtils;
 import cn.keking.utils.KkFileUtils;
 import cn.keking.utils.OfficeUtils;
@@ -20,6 +22,7 @@ import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 /**
  * Created by kl on 2018/1/17.
@@ -35,11 +38,15 @@ public class OfficeFilePreviewImpl implements FilePreview {
     private final FileHandlerService fileHandlerService;
     private final OfficeToPdfService officeToPdfService;
     private final OtherFilePreviewImpl otherFilePreview;
+    private final PdfHandlerService pdfHandlerService;
+    private final CacheService cacheService;
 
-    public OfficeFilePreviewImpl(FileHandlerService fileHandlerService, OfficeToPdfService officeToPdfService, OtherFilePreviewImpl otherFilePreview) {
+    public OfficeFilePreviewImpl(FileHandlerService fileHandlerService, OfficeToPdfService officeToPdfService, OtherFilePreviewImpl otherFilePreview, PdfHandlerService pdfHandlerService, CacheService cacheService) {
         this.fileHandlerService = fileHandlerService;
         this.officeToPdfService = officeToPdfService;
         this.otherFilePreview = otherFilePreview;
+        this.pdfHandlerService = pdfHandlerService;
+        this.cacheService = cacheService;
     }
 
     @Override
@@ -81,8 +88,23 @@ public class OfficeFilePreviewImpl implements FilePreview {
                 return EXEL_FILE_PREVIEW_PAGE;
             } else {
                 if (StringUtils.hasText(outFilePath)) {
+                    BiConsumer<FileAttribute, Boolean> runAfterConvert = (fileAttr, asyncThreadFlag) -> {
+                        if (isHtmlView) {
+                            // 对转换后的文件进行操作(改变编码方式)
+                            fileHandlerService.doActionConvertedFile(outFilePath);
+                        }
+                        //是否保留OFFICE源文件
+                        if ((asyncThreadFlag || !fileAttr.isAsync()) && !fileAttribute.isCompressFile() && ConfigConstants.getDeleteSourceFile()) {
+                            KkFileUtils.deleteFileByPath(filePath);
+                        }
+                        if ((asyncThreadFlag || !fileAttr.isAsync()) && userToken || !isPwdProtectedOffice) {
+                            // 加入缓存
+                            fileHandlerService.addConvertedFile(cacheName, fileHandlerService.getRelativePath(outFilePath));
+                        }
+                    };
+
                     try {
-                        officeToPdfService.openOfficeToPDF(filePath, outFilePath, fileAttribute);
+                        officeToPdfService.openOfficeToPDF(filePath, outFilePath, fileAttribute, runAfterConvert);
                     } catch (OfficeException e) {
                         if (isPwdProtectedOffice && !OfficeUtils.isCompatible(filePath, filePassword)) {
                             // 加密文件密码错误，提示重新输入
@@ -92,35 +114,33 @@ public class OfficeFilePreviewImpl implements FilePreview {
                         }
                         return otherFilePreview.notSupportedFile(model, fileAttribute, "抱歉，该文件版本不兼容，文件版本错误。");
                     }
-                    if (isHtmlView) {
-                        // 对转换后的文件进行操作(改变编码方式)
-                        fileHandlerService.doActionConvertedFile(outFilePath);
-                    }
-                    //是否保留OFFICE源文件
-                    if (!fileAttribute.isCompressFile() && ConfigConstants.getDeleteSourceFile()) {
-                        KkFileUtils.deleteFileByPath(filePath);
-                    }
-                    if (userToken || !isPwdProtectedOffice) {
-                        // 加入缓存
-                        fileHandlerService.addConvertedFile(cacheName, fileHandlerService.getRelativePath(outFilePath));
-                    }
                 }
             }
 
         }
         if (!isHtmlView && baseUrl != null && (OFFICE_PREVIEW_TYPE_IMAGE.equals(officePreviewType) || OFFICE_PREVIEW_TYPE_ALL_IMAGES.equals(officePreviewType))) {
-            return getPreviewType(model, fileAttribute, officePreviewType, cacheName, outFilePath, fileHandlerService, OFFICE_PREVIEW_TYPE_IMAGE, otherFilePreview);
+            return getPreviewType(model, fileAttribute, officePreviewType, cacheName, outFilePath, fileHandlerService, OFFICE_PREVIEW_TYPE_IMAGE, otherFilePreview, cacheService, pdfHandlerService);
         }
         model.addAttribute("pdfUrl", WebUtils.encodeFileName(cacheName));  //输出转义文件名 方便url识别
         return isHtmlView ? EXEL_FILE_PREVIEW_PAGE : PDF_FILE_PREVIEW_PAGE;
     }
 
     static String getPreviewType(Model model, FileAttribute fileAttribute, String officePreviewType, String pdfName, String outFilePath, FileHandlerService fileHandlerService, String officePreviewTypeImage, OtherFilePreviewImpl otherFilePreview) {
+        return getPreviewType(model, fileAttribute, officePreviewType, pdfName, outFilePath, fileHandlerService, officePreviewTypeImage, otherFilePreview, null, null);
+    }
+
+    static String getPreviewType(Model model, FileAttribute fileAttribute, String officePreviewType, String pdfName, String outFilePath, FileHandlerService fileHandlerService, String officePreviewTypeImage
+            , OtherFilePreviewImpl otherFilePreview, CacheService cacheService, PdfHandlerService pdfHandlerService) {
+        String originFilePath = fileAttribute.getOriginFilePath();  //原始文件路径
         String suffix = fileAttribute.getSuffix();
         boolean isPPT = suffix.equalsIgnoreCase("ppt") || suffix.equalsIgnoreCase("pptx");
         List<String> imageUrls = null;
         try {
-            imageUrls =  fileHandlerService.pdf2jpg(outFilePath,outFilePath, pdfName, fileAttribute);
+            if (fileAttribute.isAsync()) {
+                imageUrls = pdfHandlerService.pdf2jpgAsync(originFilePath, outFilePath, pdfName, fileAttribute);
+            } else {
+                imageUrls = fileHandlerService.pdf2jpg(originFilePath, outFilePath, pdfName, fileAttribute);
+            }
         } catch (Exception e) {
             Throwable[] throwableArray = ExceptionUtils.getThrowables(e);
             for (Throwable throwable : throwableArray) {
@@ -137,9 +157,15 @@ public class OfficeFilePreviewImpl implements FilePreview {
         }
         model.addAttribute("imgUrls", imageUrls);
         model.addAttribute("currentUrl", imageUrls.get(0));
+        if (fileAttribute.isAsync()) {
+            model.addAttribute("fileCacheName", KkFileUtils.fileNameWithoutSuffix(pdfName));
+            model.addAttribute("initNum", fileAttribute.getAsyncPageNum());
+            model.addAttribute("pageNum", cacheService.getPdfImageCache(outFilePath));
+        }
         if (officePreviewTypeImage.equals(officePreviewType)) {
             // PPT 图片模式使用专用预览页面
-            return (isPPT ? PPT_FILE_PREVIEW_PAGE : OFFICE_PICTURE_FILE_PREVIEW_PAGE);
+            return (isPPT ? PPT_FILE_PREVIEW_PAGE
+                    : fileAttribute.isAsync() ? OFFICE_PICTURE_FILE_PREVIEW_ASYNC_PAGE : OFFICE_PICTURE_FILE_PREVIEW_PAGE);
         } else {
             return PICTURE_FILE_PREVIEW_PAGE;
         }
