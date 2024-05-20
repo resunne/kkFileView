@@ -531,6 +531,15 @@ public class FileHandlerService implements InitializingBean {
 
         }
 
+        if (type.equals(FileType.OFFICE)) {
+            attribute.setAsync(ConfigConstants.isOfficePreviewImgAsync());
+            attribute.setAsyncPageNum(ConfigConstants.getOfficePreviewImgInitNum());
+        }
+        if (type.equals(FileType.PDF)) {
+            attribute.setAsync(ConfigConstants.isPdfPreviewImgAsync());
+            attribute.setAsyncPageNum(ConfigConstants.getPdfPreviewImgInitNum());
+        }
+
         return attribute;
     }
 

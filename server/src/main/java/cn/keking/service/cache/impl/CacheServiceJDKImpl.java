@@ -26,6 +26,8 @@ public class CacheServiceJDKImpl implements CacheService {
     private Map<String, String> pdfCache;
     private Map<String, List<String>> imgCache;
     private Map<String, Integer> pdfImagesCache;
+    // 当前转换页数
+    private Map<String, Integer> pdfConvertIndexCache;
     private Map<String, String> mediaConvertCache;
     private static final int QUEUE_SIZE = 500000;
     private final BlockingQueue<String> blockingQueue = new ArrayBlockingQueue<>(QUEUE_SIZE);
@@ -35,6 +37,7 @@ public class CacheServiceJDKImpl implements CacheService {
         initPDFCachePool(CacheService.DEFAULT_PDF_CAPACITY);
         initIMGCachePool(CacheService.DEFAULT_IMG_CAPACITY);
         initPdfImagesCachePool(CacheService.DEFAULT_PDFIMG_CAPACITY);
+        initPdfConvertIndexCachePool(CacheService.DEFAULT_PDFIMG_CAPACITY);
         initMediaConvertCachePool(CacheService.DEFAULT_MEDIACONVERT_CAPACITY);
     }
 
@@ -82,6 +85,16 @@ public class CacheServiceJDKImpl implements CacheService {
     }
 
     @Override
+    public Integer getPdfConvertIndexCache(String key) {
+        return pdfConvertIndexCache.get(key);
+    }
+
+    @Override
+    public void putPdfConvertIndexCache(String pdfFilePath, int num) {
+        pdfConvertIndexCache.put(pdfFilePath, num);
+    }
+
+    @Override
     public Map<String, String> getMediaConvertCache() {
         return mediaConvertCache;
     }
@@ -101,6 +114,7 @@ public class CacheServiceJDKImpl implements CacheService {
         initPDFCachePool(CacheService.DEFAULT_PDF_CAPACITY);
         initIMGCachePool(CacheService.DEFAULT_IMG_CAPACITY);
         initPdfImagesCachePool(CacheService.DEFAULT_PDFIMG_CAPACITY);
+        initPdfConvertIndexCachePool(CacheService.DEFAULT_PDFIMG_CAPACITY);
         initMediaConvertCachePool(CacheService.DEFAULT_MEDIACONVERT_CAPACITY);
     }
 
@@ -131,6 +145,13 @@ public class CacheServiceJDKImpl implements CacheService {
     @Override
     public void initPdfImagesCachePool(Integer capacity) {
         pdfImagesCache = new ConcurrentLinkedHashMap.Builder<String, Integer>()
+                .maximumWeightedCapacity(capacity).weigher(Weighers.singleton())
+                .build();
+    }
+
+    @Override
+    public void initPdfConvertIndexCachePool(Integer capacity) {
+        pdfConvertIndexCache = new ConcurrentLinkedHashMap.Builder<String, Integer>()
                 .maximumWeightedCapacity(capacity).weigher(Weighers.singleton())
                 .build();
     }

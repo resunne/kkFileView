@@ -23,6 +23,10 @@ public interface CacheService {
     void initPDFCachePool(Integer capacity);
     void initIMGCachePool(Integer capacity);
     void initPdfImagesCachePool(Integer capacity);
+
+    default void initPdfConvertIndexCachePool(Integer capacity) {
+        throw new RuntimeException("不支持此功能！");
+    }
     void initMediaConvertCachePool(Integer capacity);
     void putPDFCache(String key, String value);
     void putImgCache(String key, List<String> value);
@@ -32,6 +36,14 @@ public interface CacheService {
     List<String> getImgCache(String key);
     Integer getPdfImageCache(String key);
     void putPdfImageCache(String pdfFilePath, int num);
+
+    default Integer getPdfConvertIndexCache(String key) {
+        throw new RuntimeException("不支持此功能！");
+    }
+
+    default void putPdfConvertIndexCache(String pdfFilePath, int num) {
+        throw new RuntimeException("不支持此功能！");
+    }
     Map<String, String> getMediaConvertCache();
     void putMediaConvertCache(String key, String value);
     String getMediaConvertCache(String key);

@@ -5,7 +5,10 @@ import cn.keking.model.FileAttribute;
 import cn.keking.model.ReturnResponse;
 import cn.keking.service.FileHandlerService;
 import cn.keking.service.FilePreview;
+import cn.keking.service.PdfHandlerService;
+import cn.keking.service.cache.CacheService;
 import cn.keking.utils.DownloadUtils;
+import cn.keking.utils.KkFileUtils;
 import cn.keking.utils.WebUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.poi.EncryptedDocumentException;
@@ -25,9 +28,14 @@ public class PdfFilePreviewImpl implements FilePreview {
     private final FileHandlerService fileHandlerService;
     private final OtherFilePreviewImpl otherFilePreview;
     private static final String PDF_PASSWORD_MSG = "password";
-    public PdfFilePreviewImpl(FileHandlerService fileHandlerService, OtherFilePreviewImpl otherFilePreview) {
+    private final PdfHandlerService pdfHandlerService;
+    private final CacheService cacheService;
+
+    public PdfFilePreviewImpl(FileHandlerService fileHandlerService, OtherFilePreviewImpl otherFilePreview, PdfHandlerService pdfHandlerService, CacheService cacheService) {
         this.fileHandlerService = fileHandlerService;
         this.otherFilePreview = otherFilePreview;
+        this.pdfHandlerService = pdfHandlerService;
+        this.cacheService = cacheService;
     }
     @Override
     public String filePreviewHandle(String url, Model model, FileAttribute fileAttribute) {
@@ -51,7 +59,11 @@ public class PdfFilePreviewImpl implements FilePreview {
             }
             List<String> imageUrls;
             try {
-                imageUrls = fileHandlerService.pdf2jpg(originFilePath,outFilePath, pdfName, fileAttribute);
+                if (fileAttribute.isAsync()) {
+                    imageUrls = pdfHandlerService.pdf2jpgAsync(originFilePath, outFilePath, pdfName, fileAttribute);
+                } else {
+                    imageUrls = fileHandlerService.pdf2jpg(originFilePath, outFilePath, pdfName, fileAttribute);
+                }
             } catch (Exception e) {
                 Throwable[] throwableArray = ExceptionUtils.getThrowables(e);
                 for (Throwable throwable : throwableArray) {
@@ -69,8 +81,15 @@ public class PdfFilePreviewImpl implements FilePreview {
             }
             model.addAttribute("imgUrls", imageUrls);
             model.addAttribute("currentUrl", imageUrls.get(0));
+            model.addAttribute("fileCacheName", KkFileUtils.fileNameWithoutSuffix(pdfName));
+            model.addAttribute("initNum", fileAttribute.getAsyncPageNum());
+            model.addAttribute("pageNum", cacheService.getPdfImageCache(outFilePath));
             if (OfficeFilePreviewImpl.OFFICE_PREVIEW_TYPE_IMAGE.equals(officePreviewType)) {
-                return OFFICE_PICTURE_FILE_PREVIEW_PAGE;
+                if (fileAttribute.isAsync()) {
+                    return OFFICE_PICTURE_FILE_PREVIEW_ASYNC_PAGE;
+                } else {
+                    return OFFICE_PICTURE_FILE_PREVIEW_PAGE;
+                }
             } else {
                 return PICTURE_FILE_PREVIEW_PAGE;
             }

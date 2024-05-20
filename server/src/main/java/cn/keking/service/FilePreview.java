@@ -22,6 +22,7 @@ public interface FilePreview {
     String XMIND_FILE_PREVIEW_PAGE = "xmind";
     String EML_FILE_PREVIEW_PAGE = "eml";
     String OFFICE_PICTURE_FILE_PREVIEW_PAGE = "officePicture";
+    String OFFICE_PICTURE_FILE_PREVIEW_ASYNC_PAGE = "officePictureAsync";
     String TXT_FILE_PREVIEW_PAGE = "txt";
     String CODE_FILE_PREVIEW_PAGE = "code";
     String EXEL_FILE_PREVIEW_PAGE = "html";

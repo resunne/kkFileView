@@ -39,6 +39,10 @@ public class ConfigRefreshComponent {
                 String[] textArray;
                 String[] mediaArray;
                 String officePreviewType;
+                boolean officePreviewImgAsync;
+                int officePreviewImgInitNum;
+                boolean pdfPreviewImgAsync;
+                int pdfPreviewImgInitNum;
                 String officePreviewSwitchDisabled;
                 String ftpUsername;
                 String ftpPassword;
@@ -87,6 +91,10 @@ public class ConfigRefreshComponent {
                     text = properties.getProperty("simText", ConfigConstants.DEFAULT_TXT_TYPE);
                     media = properties.getProperty("media", ConfigConstants.DEFAULT_MEDIA_TYPE);
                     officePreviewType = properties.getProperty("office.preview.type", ConfigConstants.DEFAULT_OFFICE_PREVIEW_TYPE);
+                    officePreviewImgAsync = Boolean.parseBoolean(properties.getProperty("office.preview.img.async", ConfigConstants.DEFAULT_OFFICE_PREVIEW_IMG_ASYNC));
+                    officePreviewImgInitNum = Integer.parseInt(properties.getProperty("office.preview.img.init.num", ConfigConstants.DEFAULT_OFFICE_PREVIEW_IMG_INIT_NUM));
+                    pdfPreviewImgAsync = Boolean.parseBoolean(properties.getProperty("pdf.preview.img.async", ConfigConstants.DEFAULT_PDF_PREVIEW_IMG_ASYNC));
+                    pdfPreviewImgInitNum = Integer.parseInt(properties.getProperty("pdf.preview.img.init.num", ConfigConstants.DEFAULT_PDF_PREVIEW_IMG_INIT_NUM));
                     officePreviewSwitchDisabled = properties.getProperty("office.preview.switch.disabled", ConfigConstants.DEFAULT_OFFICE_PREVIEW_SWITCH_DISABLED);
                     ftpUsername = properties.getProperty("ftp.username", ConfigConstants.DEFAULT_FTP_USERNAME);
                     ftpPassword = properties.getProperty("ftp.password", ConfigConstants.DEFAULT_FTP_PASSWORD);
@@ -132,6 +140,10 @@ public class ConfigRefreshComponent {
                     ConfigConstants.setSimTextValue(textArray);
                     ConfigConstants.setMediaValue(mediaArray);
                     ConfigConstants.setOfficePreviewTypeValue(officePreviewType);
+                    ConfigConstants.setOfficePreviewImgAsyncValue(officePreviewImgAsync);
+                    ConfigConstants.setOfficePreviewImgInitNumValue(officePreviewImgInitNum);
+                    ConfigConstants.setPdfPreviewImgAsyncValue(pdfPreviewImgAsync);
+                    ConfigConstants.setPdfPreviewImgInitNumValue(pdfPreviewImgInitNum);
                     ConfigConstants.setFtpUsernameValue(ftpUsername);
                     ConfigConstants.setFtpPasswordValue(ftpPassword);
                     ConfigConstants.setFtpControlEncodingValue(ftpControlEncoding);

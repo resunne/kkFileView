@@ -2,6 +2,8 @@ package cn.keking.model;
 
 import cn.keking.config.ConfigConstants;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Created by kl on 2018/1/17.
  * Content :
@@ -22,9 +24,13 @@ public class FileAttribute {
     private Boolean forceUpdatedCache = false;
     private String cacheName;
     private String outFilePath;
+    private String tmpOutFilePath;
     private String originFilePath;
     private String cacheListName;
     private boolean isHtmlView = false;
+    private CompletableFuture<Void> officeConvertfuture;
+    private boolean isAsync;
+    private int asyncPageNum;
 
     /**
      * 代理请求到文件服务器的认证请求头，格式如下：
@@ -119,6 +125,10 @@ public class FileAttribute {
     public String getOutFilePath() {
         return outFilePath;
     }
+
+    public String getTmpOutFilePath() {
+        return tmpOutFilePath;
+    }
     public String getOriginFilePath() {
         return originFilePath;
     }
@@ -134,6 +144,10 @@ public class FileAttribute {
     }
     public void setOutFilePath(String outFilePath) {
         this.outFilePath = outFilePath;
+    }
+
+    public void setTmpOutFilePath(String tmpOutFilePath) {
+        this.tmpOutFilePath = tmpOutFilePath;
     }
     public void setOriginFilePath(String originFilePath) {
         this.originFilePath = originFilePath;
@@ -181,5 +195,29 @@ public class FileAttribute {
 
     public void setKkProxyAuthorization(String kkProxyAuthorization) {
         this.kkProxyAuthorization = kkProxyAuthorization;
+    }
+
+    public CompletableFuture<Void> getOfficeConvertfuture() {
+        return officeConvertfuture;
+    }
+
+    public void setOfficeConvertfuture(CompletableFuture<Void> officeConvertfuture) {
+        this.officeConvertfuture = officeConvertfuture;
+    }
+
+    public boolean isAsync() {
+        return isAsync;
+    }
+
+    public void setAsync(boolean async) {
+        isAsync = async;
+    }
+
+    public int getAsyncPageNum() {
+        return asyncPageNum;
+    }
+
+    public void setAsyncPageNum(int asyncPageNum) {
+        this.asyncPageNum = asyncPageNum;
     }
 }

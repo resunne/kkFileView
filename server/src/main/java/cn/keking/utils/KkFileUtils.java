@@ -209,4 +209,9 @@ public class KkFileUtils {
         return file.exists();
     }
 
+    public static String fileNameWithoutSuffix(String fileName) {
+        return StringUtils.hasText(fileName) && fileName.contains(".")
+                ? fileName.substring(0, fileName.toLowerCase().lastIndexOf(suffixFromFileName(fileName)) - 1)
+                : fileName;
+    }
 }

@@ -28,6 +28,10 @@ public class ConfigConstants {
     private static String[] convertMedias = {};
     private static String mediaConvertDisable;
     private static String officePreviewType;
+    public static final String DEFAULT_OFFICE_PREVIEW_IMG_ASYNC = "false";
+    public static final String DEFAULT_OFFICE_PREVIEW_IMG_INIT_NUM = "2";
+    public static final String DEFAULT_PDF_PREVIEW_IMG_ASYNC = "false";
+    public static final String DEFAULT_PDF_PREVIEW_IMG_INIT_NUM = "2";
     private static String officePreviewSwitchDisabled;
     private static String ftpUsername;
     private static String ftpPassword;
@@ -72,6 +76,10 @@ public class ConfigConstants {
     public static final String DEFAULT_TXT_TYPE = "txt,html,htm,asp,jsp,xml,json,properties,md,gitignore,log,java,py,c,cpp,sql,sh,bat,m,bas,prg,cmd,xbrl";
     public static final String DEFAULT_MEDIA_TYPE = "mp3,wav,mp4,flv";
     public static final String DEFAULT_OFFICE_PREVIEW_TYPE = "image";
+    private static boolean officePreviewImgAsync;
+    private static int officePreviewImgInitNum;
+    private static boolean pdfPreviewImgAsync;
+    private static int pdfPreviewImgInitNum;
     public static final String DEFAULT_OFFICE_PREVIEW_SWITCH_DISABLED = "false";
     public static final String DEFAULT_FTP_USERNAME = null;
     public static final String DEFAULT_FTP_PASSWORD = null;
@@ -188,6 +196,58 @@ public class ConfigConstants {
 
     public static void setOfficePreviewTypeValue(String officePreviewType) {
         ConfigConstants.officePreviewType = officePreviewType;
+    }
+
+    public static boolean isOfficePreviewImgAsync() {
+        return officePreviewImgAsync;
+    }
+
+    @Value("${office.preview.img.async:false}")
+    public void setOfficePreviewImgAsync(boolean officePreviewImgAsync) {
+        setOfficePreviewImgAsyncValue(officePreviewImgAsync);
+    }
+
+    public static void setOfficePreviewImgAsyncValue(boolean officePreviewImgAsync) {
+        ConfigConstants.officePreviewImgAsync = officePreviewImgAsync;
+    }
+
+    public static int getOfficePreviewImgInitNum() {
+        return officePreviewImgInitNum;
+    }
+
+    @Value("${office.preview.img.init.num:2}")
+    public void setOfficePreviewImgInitNum(int officePreviewImgInitNum) {
+        setOfficePreviewImgInitNumValue(officePreviewImgInitNum);
+    }
+
+    public static void setOfficePreviewImgInitNumValue(int officePreviewImgInitNum) {
+        ConfigConstants.officePreviewImgInitNum = officePreviewImgInitNum;
+    }
+
+    public static boolean isPdfPreviewImgAsync() {
+        return pdfPreviewImgAsync;
+    }
+
+    @Value("${pdf.preview.img.async:false}")
+    public void setPdfPreviewImgAsync(boolean pdfPreviewImgAsync) {
+        setPdfPreviewImgAsyncValue(pdfPreviewImgAsync);
+    }
+
+    public static void setPdfPreviewImgAsyncValue(boolean pdfPreviewImgAsync) {
+        ConfigConstants.pdfPreviewImgAsync = pdfPreviewImgAsync;
+    }
+
+    public static int getPdfPreviewImgInitNum() {
+        return pdfPreviewImgInitNum;
+    }
+
+    @Value("${pdf.preview.img.init.num:2}")
+    public void setPdfPreviewImgInitNum(int pdfPreviewImgInitNum) {
+        setPdfPreviewImgInitNumValue(pdfPreviewImgInitNum);
+    }
+
+    public static void setPdfPreviewImgInitNumValue(int pdfPreviewImgInitNum) {
+        ConfigConstants.pdfPreviewImgInitNum = pdfPreviewImgInitNum;
     }
 
     public static String getFtpUsername() {
