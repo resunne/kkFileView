@@ -93,7 +93,7 @@ public class DownloadUtils {
                     factory.setConnectionRequestTimeout(2000);  //设置超时时间
                     factory.setConnectTimeout(10000);
                     factory.setReadTimeout(72000);
-                    HttpClient httpClient = HttpClientBuilder.create().setRedirectStrategy(new DefaultRedirectStrategy()).build();
+                    HttpClient httpClient = HttpClientBuilder.create().setSSLSocketFactory(SslUtils.getSslFactory()).setRedirectStrategy(new DefaultRedirectStrategy()).build();
                     factory.setHttpClient(httpClient);  //加入重定向方法
                     restTemplate.setRequestFactory(factory);
                     RequestCallback requestCallback = request -> {

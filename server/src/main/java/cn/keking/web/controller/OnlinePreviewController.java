@@ -7,6 +7,7 @@ import cn.keking.service.FilePreviewFactory;
 import cn.keking.service.cache.CacheService;
 import cn.keking.service.impl.OtherFilePreviewImpl;
 import cn.keking.utils.KkFileUtils;
+import cn.keking.utils.SslUtils;
 import cn.keking.utils.WebUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.opensagres.xdocreport.core.io.IOUtils;
@@ -139,7 +140,7 @@ public class OnlinePreviewController {
             factory.setConnectionRequestTimeout(2000);
             factory.setConnectTimeout(10000);
             factory.setReadTimeout(72000);
-            HttpClient httpClient = HttpClientBuilder.create().setRedirectStrategy(new DefaultRedirectStrategy()).build();
+            HttpClient httpClient = HttpClientBuilder.create().setSSLSocketFactory(SslUtils.getSslFactory()).setRedirectStrategy(new DefaultRedirectStrategy()).build();
             factory.setHttpClient(httpClient);
             restTemplate.setRequestFactory(factory);
             RequestCallback requestCallback = request -> {
