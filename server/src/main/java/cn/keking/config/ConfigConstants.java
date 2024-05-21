@@ -28,10 +28,10 @@ public class ConfigConstants {
     private static String[] convertMedias = {};
     private static String mediaConvertDisable;
     private static String officePreviewType;
-    public static final String DEFAULT_OFFICE_PREVIEW_IMG_ASYNC = "false";
-    public static final String DEFAULT_OFFICE_PREVIEW_IMG_INIT_NUM = "2";
-    public static final String DEFAULT_PDF_PREVIEW_IMG_ASYNC = "false";
-    public static final String DEFAULT_PDF_PREVIEW_IMG_INIT_NUM = "2";
+    private static boolean officePreviewImgAsync;
+    private static int officePreviewImgInitNum;
+    private static boolean pdfPreviewImgAsync;
+    private static int pdfPreviewImgInitNum;
     private static String officePreviewSwitchDisabled;
     private static String ftpUsername;
     private static String ftpPassword;
@@ -71,15 +71,19 @@ public class ConfigConstants {
     private static String homePagination;
     private static String homePageSize;
     private static String homeSearch;
+    private static int globalThreadPoolCoreSize;
+    private static int globalThreadPoolMaxSize;
+    private static long globalThreadPoolAliveTime;
+    private static int globalThreadPoolBlockQueueSize;
 
     public static final String DEFAULT_CACHE_ENABLED = "true";
     public static final String DEFAULT_TXT_TYPE = "txt,html,htm,asp,jsp,xml,json,properties,md,gitignore,log,java,py,c,cpp,sql,sh,bat,m,bas,prg,cmd,xbrl";
     public static final String DEFAULT_MEDIA_TYPE = "mp3,wav,mp4,flv";
     public static final String DEFAULT_OFFICE_PREVIEW_TYPE = "image";
-    private static boolean officePreviewImgAsync;
-    private static int officePreviewImgInitNum;
-    private static boolean pdfPreviewImgAsync;
-    private static int pdfPreviewImgInitNum;
+    public static final String DEFAULT_OFFICE_PREVIEW_IMG_ASYNC = "false";
+    public static final String DEFAULT_OFFICE_PREVIEW_IMG_INIT_NUM = "2";
+    public static final String DEFAULT_PDF_PREVIEW_IMG_ASYNC = "false";
+    public static final String DEFAULT_PDF_PREVIEW_IMG_INIT_NUM = "2";
     public static final String DEFAULT_OFFICE_PREVIEW_SWITCH_DISABLED = "false";
     public static final String DEFAULT_FTP_USERNAME = null;
     public static final String DEFAULT_FTP_PASSWORD = null;
@@ -115,6 +119,10 @@ public class ConfigConstants {
     public static final String DEFAULT_HOME_PAGINATION = "true";
     public static final String DEFAULT_HOME_PAGSIZE = "15";
     public static final String DEFAULT_HOME_SEARCH = "true";
+    public static final String DEFAULT_GLOBAL_THREAD_POOL_CORE_SIZE = "10";
+    public static final String DEFAULT_GLOBAL_THREAD_POOL_MAX_SIZE = "20";
+    public static final String DEFAULT_GLOBAL_THREAD_POOL_ALIVE_TIME = "300000";
+    public static final String DEFAULT_GLOBAL_THREAD_POOL_BLOCK_QUEUE_SIZE = "25";
 
     public static Boolean isCacheEnabled() {
         return cacheEnabled;
@@ -803,6 +811,58 @@ public class ConfigConstants {
 
     public static void setHomeSearchValue(String homeSearch) {
         ConfigConstants.homeSearch = homeSearch;
+    }
+
+    public static int getGlobalThreadPoolCoreSize() {
+        return globalThreadPoolCoreSize;
+    }
+
+    @Value("${thread.pool.global.core-size:10}")
+    public static void setGlobalThreadPoolCoreSize(int globalThreadPoolCoreSize) {
+        setGlobalThreadPoolCoreSizeValue(globalThreadPoolCoreSize);
+    }
+
+    public static void setGlobalThreadPoolCoreSizeValue(int globalThreadPoolCoreSize) {
+        ConfigConstants.globalThreadPoolCoreSize = globalThreadPoolCoreSize;
+    }
+
+    public static int getGlobalThreadPoolMaxSize() {
+        return globalThreadPoolMaxSize;
+    }
+
+    @Value("${thread.pool.global.max-size:20}")
+    public static void setGlobalThreadPoolMaxSize(int globalThreadPoolMaxSize) {
+        setGlobalThreadPoolMaxSizeValue(globalThreadPoolMaxSize);
+    }
+
+    public static void setGlobalThreadPoolMaxSizeValue(int globalThreadPoolMaxSize) {
+        ConfigConstants.globalThreadPoolMaxSize = globalThreadPoolMaxSize;
+    }
+
+    public static long getGlobalThreadPoolAliveTime() {
+        return globalThreadPoolAliveTime;
+    }
+
+    @Value("${thread.pool.global.alive-time:300000}")
+    public static void setGlobalThreadPoolAliveTime(long globalThreadPoolAliveTime) {
+        setGlobalThreadPoolAliveTimeValue(globalThreadPoolAliveTime);
+    }
+
+    public static void setGlobalThreadPoolAliveTimeValue(long globalThreadPoolAliveTime) {
+        ConfigConstants.globalThreadPoolAliveTime = globalThreadPoolAliveTime;
+    }
+
+    public static int getGlobalThreadPoolBlockQueueSize() {
+        return globalThreadPoolBlockQueueSize;
+    }
+
+    @Value("${thread.pool.global.block-queue-size:25}")
+    public static void setGlobalThreadPoolBlockQueueSize(int globalThreadPoolBlockQueueSize) {
+        setGlobalThreadPoolBlockQueueSizeValue(globalThreadPoolBlockQueueSize);
+    }
+
+    public static void setGlobalThreadPoolBlockQueueSizeValue(int globalThreadPoolBlockQueueSize) {
+        ConfigConstants.globalThreadPoolBlockQueueSize = globalThreadPoolBlockQueueSize;
     }
 
 }

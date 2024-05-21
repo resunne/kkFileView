@@ -2,6 +2,7 @@ package cn.keking.service;
 
 import cn.keking.config.ConfigConstants;
 import cn.keking.model.FileAttribute;
+import cn.keking.utils.GlobalThreadPool;
 import com.sun.star.document.UpdateDocMode;
 import org.apache.commons.lang3.StringUtils;
 import org.jodconverter.core.office.OfficeException;
@@ -114,6 +115,17 @@ public class OfficeToPdfService {
         }
 
         if (fileAttribute.isAsync()) {
+            // 异步转换整个文件
+            CompletableFuture<Void> officeConvertFuture = CompletableFuture.runAsync(() -> {
+                try {
+                    filterData.remove("PageRange"); // 不限制页面
+                    builder.build().convert(inputFile).to(outputFile).execute();
+                } catch (OfficeException e) {
+                    logger.error(String.format("Office 转 PDF 失败：%s。", org.springframework.util.StringUtils.hasText(e.getMessage()) ? e.getMessage() : "发生错误"), e);
+                }
+                runAfterConvert.accept(fileAttribute, true);
+            }, GlobalThreadPool.getExecutor());
+            fileAttribute.setOfficeConvertfuture(officeConvertFuture);
             // 同步转换前两页，以供快速预览
             filterData.put("PageRange", String.format("1-%d", fileAttribute.getAsyncPageNum()));
             String tmpOutputFilePath = outputFilePath_end.substring(0, outputFilePath_end.lastIndexOf("/") + 1)
@@ -121,17 +133,6 @@ public class OfficeToPdfService {
                     + outputFilePath_end.substring(outputFilePath_end.lastIndexOf("/") + 1);
             builder.build().convert(inputFile).to(new File(tmpOutputFilePath)).execute();
             fileAttribute.setTmpOutFilePath(tmpOutputFilePath);
-            // 异步转换整个文件
-            CompletableFuture<Void> officeConvertFuture = CompletableFuture.runAsync(() -> {
-                try {
-                    filterData.remove("PageRange"); //不限制页面
-                    builder.build().convert(inputFile).to(outputFile).execute();
-                } catch (OfficeException e) {
-                    logger.error(String.format("Office 转 PDF 失败：%s。", org.springframework.util.StringUtils.hasText(e.getMessage()) ? e.getMessage() : "发生错误"), e);
-                }
-                runAfterConvert.accept(fileAttribute, true);
-            });
-            fileAttribute.setOfficeConvertfuture(officeConvertFuture);
         } else {
             builder.build().convert(inputFile).to(outputFile).execute();
         }

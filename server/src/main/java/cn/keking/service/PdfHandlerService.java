@@ -6,6 +6,7 @@ import cn.keking.model.FileType;
 import cn.keking.service.bo.PdfImgCacheBo;
 import cn.keking.service.cache.CacheService;
 import cn.keking.service.cache.NotResourceCache;
+import cn.keking.utils.GlobalThreadPool;
 import cn.keking.web.filter.BaseUrlFilter;
 import com.itextpdf.text.pdf.PdfReader;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -263,7 +264,7 @@ public class PdfHandlerService {
                     });
                 } else {
                     PDDocument finalDoc = doc;
-                    future = CompletableFuture.runAsync(() -> pdfFileReadFunction.read(finalDoc, pdfRenderer, pageCount));
+                    future = CompletableFuture.runAsync(() -> pdfFileReadFunction.read(finalDoc, pdfRenderer, pageCount), GlobalThreadPool.getExecutor());
                 }
             }
         } catch (IOException e) {

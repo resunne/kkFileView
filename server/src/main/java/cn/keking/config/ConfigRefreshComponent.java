@@ -82,6 +82,10 @@ public class ConfigRefreshComponent {
                 String homePagination;
                 String homePageSize;
                 String homeSearch;
+                int globalThreadPoolCoreSize;
+                int globalThreadPoolMaxSize;
+                long globalThreadPoolAliveTime;
+                int globalThreadPoolBlockQueueSize;
                 while (true) {
                     FileReader fileReader = new FileReader(configFilePath);
                     BufferedReader bufferedReader = new BufferedReader(fileReader);
@@ -135,6 +139,10 @@ public class ConfigRefreshComponent {
                     homeSearch = properties.getProperty("home.search", ConfigConstants.DEFAULT_HOME_SEARCH);
                     cadThread = Integer.parseInt(properties.getProperty("cad.thread", ConfigConstants.DEFAULT_CAD_THREAD));
                     prohibitArray = prohibit.split(",");
+                    globalThreadPoolCoreSize = Integer.parseInt(properties.getProperty("thread.pool.global.core-size", ConfigConstants.DEFAULT_GLOBAL_THREAD_POOL_CORE_SIZE));
+                    globalThreadPoolMaxSize = Integer.parseInt(properties.getProperty("thread.pool.global.max-size", ConfigConstants.DEFAULT_GLOBAL_THREAD_POOL_MAX_SIZE));
+                    globalThreadPoolAliveTime = Long.parseLong(properties.getProperty("thread.pool.global.alive-time", ConfigConstants.DEFAULT_GLOBAL_THREAD_POOL_ALIVE_TIME));
+                    globalThreadPoolBlockQueueSize = Integer.parseInt(properties.getProperty("thread.pool.global.block-queue-size", ConfigConstants.DEFAULT_GLOBAL_THREAD_POOL_BLOCK_QUEUE_SIZE));
 
                     ConfigConstants.setCacheEnabledValueValue(cacheEnabled);
                     ConfigConstants.setSimTextValue(textArray);
@@ -181,6 +189,10 @@ public class ConfigRefreshComponent {
                     ConfigConstants.setHomePaginationValue(homePagination);
                     ConfigConstants.setHomePageSizeValue(homePageSize);
                     ConfigConstants.setHomeSearchValue(homeSearch);
+                    ConfigConstants.setGlobalThreadPoolCoreSizeValue(globalThreadPoolCoreSize);
+                    ConfigConstants.setGlobalThreadPoolMaxSizeValue(globalThreadPoolMaxSize);
+                    ConfigConstants.setGlobalThreadPoolAliveTimeValue(globalThreadPoolAliveTime);
+                    ConfigConstants.setGlobalThreadPoolBlockQueueSizeValue(globalThreadPoolBlockQueueSize);
                     setWatermarkConfig(properties);
                     bufferedReader.close();
                     fileReader.close();
