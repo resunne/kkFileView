@@ -3,6 +3,8 @@ package cn.keking.service;
 import cn.keking.config.ConfigConstants;
 import cn.keking.model.FileAttribute;
 import cn.keking.utils.GlobalThreadPool;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.star.document.UpdateDocMode;
 import org.apache.commons.lang3.StringUtils;
 import org.jodconverter.core.office.OfficeException;
@@ -12,10 +14,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * @author yudian-it
@@ -79,7 +84,6 @@ public class OfficeToPdfService {
         if (!outputFile.getParentFile().exists() && !outputFile.getParentFile().mkdirs()) {
             logger.error("创建目录【{}】失败，请检查目录权限！",outputFilePath_end);
         }
-        LocalConverter.Builder builder;
         Map<String, Object> filterData = new HashMap<>();
         filterData.put("EncryptFile", true);
         if(!ConfigConstants.getOfficePageRange().equals("false")){
@@ -102,26 +106,45 @@ public class OfficeToPdfService {
             filterData.put("DocumentOpenPassword", fileAttribute.getFilePassword()); //给PDF添加密码
         }
         Map<String, Object> customProperties = new HashMap<>();
+        Map<String, Object> loadProperties;
         customProperties.put("FilterData", filterData);
         if (StringUtils.isNotBlank(fileAttribute.getFilePassword())) {
-            Map<String, Object> loadProperties = new HashMap<>();
+            loadProperties = new HashMap<>();
             loadProperties.put("Hidden", true);
             loadProperties.put("ReadOnly", true);
             loadProperties.put("UpdateDocMode", UpdateDocMode.NO_UPDATE);
             loadProperties.put("Password", fileAttribute.getFilePassword());
-            builder = LocalConverter.builder().loadProperties(loadProperties).storeProperties(customProperties);
         } else {
-            builder = LocalConverter.builder().storeProperties(customProperties);
+            loadProperties = null;
         }
 
+        // 转换器构建
+        BiFunction<Map<String, Object>, Map<String, Object>, LocalConverter> converterBuildFun = (loadPropertyMap, customPropertyMap) -> {
+            LocalConverter.Builder converterBuilder = LocalConverter.builder().storeProperties(customPropertyMap);
+            if (Objects.nonNull(loadPropertyMap)) {
+                converterBuilder.loadProperties(loadPropertyMap);
+            }
+            return converterBuilder.build();
+        };
+
+        // 转换文件：异步 + 同步
         if (fileAttribute.isAsync()) {
             // 异步转换整个文件
             CompletableFuture<Void> officeConvertFuture = CompletableFuture.runAsync(() -> {
                 try {
-                    filterData.remove("PageRange"); // 不限制页面
-                    builder.build().convert(inputFile).to(outputFile).execute();
+                    // 拷贝读取参数
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    Map<String, Object> customPropertiesCopy = objectMapper.readValue(objectMapper.writeValueAsBytes(customProperties), new TypeReference<HashMap<String, Object>>() {
+                    });
+                    customPropertiesCopy.put("FilterData", objectMapper.readValue(objectMapper.writeValueAsBytes(customProperties.get("FilterData")), new TypeReference<HashMap<String, Object>>() {
+                    }));
+                    ((Map<String, Object>) customPropertiesCopy.get("FilterData")).remove("PageRange");
+                    converterBuildFun.apply(loadProperties, customPropertiesCopy).convert(inputFile).to(outputFile).execute();
                 } catch (OfficeException e) {
                     logger.error(String.format("Office 转 PDF 失败：%s。", org.springframework.util.StringUtils.hasText(e.getMessage()) ? e.getMessage() : "发生错误"), e);
+                } catch (IOException e) {
+                    logger.error(String.format("Office 转 PDF 失败 customProperties 拷贝错误：%s。", org.springframework.util.StringUtils.hasText(e.getMessage()) ? e.getMessage() : "发生错误"), e);
+                    throw new RuntimeException(e);
                 }
                 runAfterConvert.accept(fileAttribute, true);
             }, GlobalThreadPool.getExecutor());
@@ -131,10 +154,12 @@ public class OfficeToPdfService {
             String tmpOutputFilePath = outputFilePath_end.substring(0, outputFilePath_end.lastIndexOf("/") + 1)
                     + "tmp/"
                     + outputFilePath_end.substring(outputFilePath_end.lastIndexOf("/") + 1);
-            builder.build().convert(inputFile).to(new File(tmpOutputFilePath)).execute();
+            converterBuildFun.apply(loadProperties, customProperties).convert(inputFile).to(new File(tmpOutputFilePath)).execute();
             fileAttribute.setTmpOutFilePath(tmpOutputFilePath);
-        } else {
-            builder.build().convert(inputFile).to(outputFile).execute();
+        }
+        // 转换文件：同步
+        else {
+            converterBuildFun.apply(loadProperties, customProperties).convert(inputFile).to(outputFile).execute();
         }
         runAfterConvert.accept(fileAttribute, false);
     }

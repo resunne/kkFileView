@@ -41,26 +41,64 @@
             padding: 5px;
         }
 
-        #loading_lazy_tip {
+        #status_tip {
             position: fixed;
-            bottom: 0;
+            bottom: 50px;
             width: 100%;
             height: 50px;
             text-align: center;
-            margin-bottom: 15px;
+            /*margin-bottom: 12px;*/
         }
 
-        #loading_lazy_tip div {
+        #status_tip div {
             height: 100%;
             line-height: 50px;
             display: inline-block;
             border: none;
             vertical-align: middle;
+        }
+
+        #loading_tip_div div {
+            color: green;
+        }
+
+        #warn_tip_div div {
+            color: darkorange;
+        }
+
+        #error_tip_div div {
             color: red;
         }
 
-        #loading_lazy_tip img {
+        #status_tip img {
             height: 100%;
+        }
+
+        #opt_div {
+            position: fixed;
+            bottom: 0px;
+            width: 100%;
+            height: 50px;
+            text-align: center;
+            border: none;
+            /*margin-bottom: 12px;*/
+        }
+
+        #load_img {
+            background: green;
+            height: 100%;
+            width: 100%;
+            border-radius: 7px 7px 0 0;
+            color: white;
+            font-size: large;
+            border: 3px green solid;
+        }
+
+        #load_img:hover {
+            background-color: white;
+            border-color: limegreen;
+            color: limegreen;
+            font-weight: bolder;
         }
 
     </style>
@@ -77,18 +115,39 @@
         </div>
     </#list>
 </div>
-<div id="loading_lazy_tip">
-    <div>
-        <img alt="加载中" src="images/loading_soon.gif">
+<div id="status_tip">
+    <div id="loading_tip_div">
+        <div>
+            <img alt="加载中" src="images/loading_soon.gif">
+        </div>
+        <div>
+            正在加载
+            <span id="page_info_span">
+                <span>：共<span id="view_page_num">-</span>页，</span>
+                <span>还余</span><span id="left_page_num">-</span><span>页</span>
+            </span>
+            <span>……</span>
+        </div>
     </div>
-    <div>
-        正在加载
-        <span id="page_info_span">
-             <span>：共<span id="view_page_num">-</span>页，</span>
-             <span>还余</span><span id="left_page_num">-</span><span>页</span>
-         </span>
-        <span>……</span>
+    <div id="warn_tip_div">
+        <div>
+            <img alt="提示" src="images/tip.svg">
+        </div>
+        <div>
+            <span id="tip_info_span">数据加载失败！</span>
+        </div>
     </div>
+    <div id="error_tip_div">
+        <div>
+            <img alt="错误" src="images/error.svg">
+        </div>
+        <div>
+            <span id="error_info_span">发生错误，请刷新页面！</span>
+        </div>
+    </div>
+</div>
+<div id="opt_div">
+    <button id="load_img">加载更多</button>
 </div>
 <#if "false" == switchDisabled>
     <img src="images/pdf.svg" width="48" height="48"
@@ -98,8 +157,9 @@
 <script>
 
     $(() => {
-        loadingTipHide();
+        statusTipHide();
         updateLoadedNum();
+        loadButShow();
     })
 
     window.onload = function () {
@@ -132,8 +192,13 @@
     let reloadAllDataCount = 0;
     // 完整文件是否加载完成
     let loadingDataFlag = false;
+    // 重试任务开启标志
+    let retryFalg = false;
+    // 消息显示时长
+    let tipKeepTime = 800;
+    let tipShow = false;
     // 页总数
-    let pageNum = <#if pageNum??>${pageNum}<#else> - 1</#if>;
+    let pageNum = <#if pageNum??>${pageNum}<#else>-1</#if>;
     // 已加载页数
     <#-- let loadedNum = <#if loadedNum??>${loadedNum}<#elseif imgUrls??>${imgUrls?size}<#else> - 1</#if>; -->
     let loadedNum;
@@ -182,10 +247,10 @@
         }
     }
 
-    function loadAllData() {
+    function loadAllData(callback) {
         if (!loadingDataFlag && (loadedNum < 0 || pageNum < 0 || loadedNum < pageNum)) {
             loadingDataFlag = true;
-            loadingTipShow();
+            statusTipShow('loading');
             // 文件名
             let fileCacheName = $('#file_cache_name_input').val();
 
@@ -223,6 +288,10 @@
                 })
                 .always(() => {
                     resetLoadingStatus();
+                    loadButShow();
+                    if (callback) {
+                        callback.apply();
+                    }
                 });
         }
     }
@@ -244,21 +313,38 @@
         return isInSight($lastViewImg[0]);
     }
 
-    function loadingTipShow() {
-        if (loadedNum > 0 && pageNum > loadedNum) {
-            $('#view_page_num').text(pageNum);
-            $('#left_page_num').text(pageNum - loadedNum);
-            $('#page_info_span').show();
-        } else {
-            $('#page_info_span').hide();
-        }
-        $('#loading_lazy_tip').show();
+    function statusTipShow(status, msg = '') {
+        // if (!tipShow) {
+        //     tipShow = true;
+            statusTipHide();
+
+            if ('loading' === status) {
+                if (loadedNum > 0 && pageNum > loadedNum) {
+                    $('#view_page_num').text(pageNum);
+                    $('#left_page_num').text(pageNum - loadedNum);
+                    $('#page_info_span').show();
+                }
+                $('#loading_tip_div').show();
+            } else if ('warn' === status) {
+                $('#tip_info_span').text(msg);
+                $('#warn_tip_div').show();
+            } else if ('error' === status) {
+                $('#error_info_span').text(msg);
+                $('#error_tip_div').show();
+            }
+            $('#status_tip').show();
+            // setTimeout(() => tipShow = false, tipKeepTime);
+        // }
     }
 
-    function loadingTipHide() {
+    function statusTipHide() {
         // $('#view_page_num').text(pageNum);
         // $('#left_page_num').text(loadedNum);
-        $('#loading_lazy_tip').hide();
+        $('#status_tip').hide();
+        $('#page_info_span').hide();
+        $('#loading_tip_div').hide();
+        $('#warn_tip_div').hide();
+        $('#error_tip_div').hide();
     }
 
     function updateLoadedNum() {
@@ -321,18 +407,33 @@
             loadingDataFlag = false;
         }
         showImg();
-        setTimeout(loadingTipHide, 600);
+        setTimeout(statusTipHide, 1000);
     }
 
     function retry(fn, msg) {
-        reloadAllDataCount++;
-        if (reloadAllDataCount <= RELOAD_ALL_DATA_COUNT_MAX) {
-            alert(msg + '，5秒后将重新加载！');
-            setTimeout(fn, 5000);
-        } else {
-            alert('数据重新加载次数过多，请尝试刷新页面！');
+        if (!retryFalg) {
+            retryFalg = true;
+            reloadAllDataCount++;
+            if (reloadAllDataCount <= RELOAD_ALL_DATA_COUNT_MAX) {
+                statusTipShow('warn', msg + '，5秒后将重新加载！');
+                setTimeout(() => {
+                    loadAllData(() => retryFalg = false);
+                }, 5000);
+            } else {
+                statusTipShow('error', '数据重新加载次数过多，请尝试刷新页面！');
+            }
         }
     }
+
+    function loadButShow() {
+        if (0 >= pageNum || loadedNum < pageNum) {
+            $('#load_img').show();
+        } else {
+            $('#load_img').hide();
+        }
+    }
+
+    $('#load_img').on('click', event => loadAllData(() => $(document).scrollTop($(document).height())));
 
     window.onscroll = renderImgs;
 </script>
